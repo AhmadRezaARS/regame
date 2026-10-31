@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:vm="using:ReGame.ViewModels"
+             x:Class="ReGame.Views.StatsPanel"
+             x:DataType="vm:CellData">
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="12" Spacing="12">
+
+            <StackPanel>
+                <TextBlock Text="{Binding Text}" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Kind}" Opacity="0.7" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Opacity="0.8" />
+
+            <TextBlock Text="No stats. Tick “Alive” in the property panel."
+                       TextWrapping="Wrap" Opacity="0.6"
+                       IsVisible="{Binding !IsAlive}" />
+
+            <StackPanel IsVisible="{Binding IsAlive}">
+                <StackPanel DataContext="{Binding Stats}" x:DataType="vm:CharacterStats" Spacing="14">
+
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Level, StringFormat='Level {0}'}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding SkillPoints, StringFormat='Skill points: {0}'}" Opacity="0.7" />
+                    </StackPanel>
+
+                    <!-- HP / MP / SP bars -->
+                    <ItemsControl ItemsSource="{Binding Pools}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PoolEntry">
+                                <StackPanel Margin="0,0,0,8" Spacing="2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" Opacity="0.75" />
+                                    <Grid>
+                                        <ProgressBar Height="20" Minimum="0"
+                                                     Maximum="{Binding Pool.Total}"
+                                                     Value="{Binding Pool.Current}"
+                                                     Foreground="{Binding Brush}" />
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   FontSize="12" FontWeight="SemiBold">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0} / {1}">
+                                                    <Binding Path="Pool.Current" />
+                                                    <Binding Path="Pool.Total" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- offence, defence, ... : base + skill bonus = total -->
+                    <ItemsControl ItemsSource="{Binding Lines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:StatLine">
+                                <Grid ColumnDefinitions="*,Auto,60" ColumnSpacing="10" Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding Label}" />
+                                    <TextBlock Grid.Column="1" Opacity="0.6">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} + {1}">
+                                                <Binding Path="Stat.BaseValue" />
+                                                <Binding Path="Stat.Bonus" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding Stat.Total}"
+                                               FontWeight="Bold" TextAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- skills -->
+                    <TextBlock Text="Skills" FontWeight="SemiBold" />
+                    <ItemsControl ItemsSource="{Binding Skills}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SkillEntry">
+                                <StackPanel Margin="0,0,0,6">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.6" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

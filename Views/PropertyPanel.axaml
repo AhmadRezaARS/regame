@@ -1,0 +1,334 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ReGame.ViewModels"
+             xmlns:rules="using:ReGame.Core.Rules"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
+             x:Class="ReGame.Views.PropertyPanel"
+             x:DataType="vm:CellData">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="Minimum" Value="0" />
+      <Setter Property="Increment" Value="1" />
+      <Setter Property="FormatString" Value="0" />
+    </Style>
+    <Style Selector="Expander">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="12" Spacing="10">
+
+      <TextBlock Text="Cell properties" FontSize="16" FontWeight="SemiBold" />
+
+      <!-- ============ APPEARANCE ============ -->
+      <Expander Header="Appearance" IsExpanded="True">
+        <StackPanel Margin="0,8,0,0" Spacing="14">
+
+          <Grid ColumnDefinitions="110,*" RowSpacing="8" ColumnSpacing="8"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+
+            <TextBlock Grid.Row="0" Classes="label" Text="Text" />
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Text}" />
+
+            <TextBlock Grid.Row="1" Classes="label" Text="Background" />
+            <ColorPicker Grid.Row="1" Grid.Column="1" Color="{Binding BackgroundColor, Mode=TwoWay}" />
+
+            <TextBlock Grid.Row="2" Classes="label" Text="Text color" />
+            <ColorPicker Grid.Row="2" Grid.Column="1" Color="{Binding TextColor, Mode=TwoWay}" />
+
+            <TextBlock Grid.Row="3" Classes="label" Text="Border color" />
+            <ColorPicker Grid.Row="3" Grid.Column="1" Color="{Binding BorderColor, Mode=TwoWay}" />
+
+            <TextBlock Grid.Row="4" Classes="label" Text="Border width" />
+            <NumericUpDown Grid.Row="4" Grid.Column="1" Maximum="20" Value="{Binding BorderWidth}" />
+
+            <TextBlock Grid.Row="5" Classes="label" Text="{Binding Radius, StringFormat='Corners: {0:0}'}" />
+            <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="60" Value="{Binding Radius}" />
+          </Grid>
+
+          <!-- templates -->
+          <StackPanel Spacing="6">
+            <TextBlock Text="Templates" FontWeight="SemiBold" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+
+              <!-- gallery -->
+              <Border MinHeight="104" CornerRadius="6" Background="#1FFFFFFF" Padding="4">
+                <Grid>
+                  <TextBlock Text="No templates" Opacity="0.5"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             IsVisible="{Binding Library.IsEmpty}" />
+
+                  <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Library.Styles}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:StyleItem">
+                          <Grid Width="48" Height="48" Margin="2" Background="Transparent"
+                                Tapped="OnTemplateTapped">
+
+                            <!-- right-click or touch-hold -->
+                            <Grid.ContextMenu>
+                              <ContextMenu>
+                                <MenuItem Header="Delete" Click="OnTemplateDeleteClick" />
+                              </ContextMenu>
+                            </Grid.ContextMenu>
+
+                            <Border Background="{Binding Background}"
+                                    BorderBrush="{Binding BorderBrush}"
+                                    BorderThickness="{Binding BorderThickness}"
+                                    CornerRadius="{Binding Corners}"
+                                    ClipToBounds="True">
+                              <TextBlock Text="{Binding Number}"
+                                         Foreground="{Binding Foreground}"
+                                         FontSize="14" FontWeight="SemiBold"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
+                            </Border>
+
+                            <!-- selected tile -->
+                            <Border BorderBrush="Gold" BorderThickness="2"
+                                    CornerRadius="{Binding Corners}"
+                                    IsHitTestVisible="False"
+                                    IsVisible="{Binding IsSelected}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Grid>
+              </Border>
+
+              <!-- buttons -->
+              <StackPanel Grid.Column="1" Width="76" Spacing="6">
+                <Button Content="Add" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding Library.AddCommand}" CommandParameter="{Binding}" />
+                <Button Content="Update" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding Library.UpdateCommand}" CommandParameter="{Binding}"
+                        IsEnabled="{Binding Library.HasSelection}" />
+                <Button Content="Clear" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding Library.ClearCommand}"
+                        IsEnabled="{Binding !Library.IsEmpty}" />
+              </StackPanel>
+            </Grid>
+
+            <TextBlock Text="{Binding Library.Message}" FontSize="11" Opacity="0.7" TextWrapping="Wrap" />
+            <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
+                       Text="Tap a tile to apply it. Right-click or hold a tile to delete it. Right-click a cell (or touch-hold and drag) to paint it with the selected cell's look." />
+          </StackPanel>
+        </StackPanel>
+      </Expander>
+
+      <!-- ============ INFO ============ -->
+      <Expander Header="Info" IsExpanded="False">
+        <StackPanel Margin="0,8,0,0" Spacing="6">
+          <TextBlock Classes="label" Text="Cell info" />
+          <TextBox Text="{Binding Info}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+        </StackPanel>
+      </Expander>
+
+      <!-- ============ GAME PROPERTIES ============ -->
+      <Expander Header="Game properties" IsExpanded="True">
+
+        <StackPanel>
+          <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="8">
+            <TextBlock Grid.Row="0" Classes="label" Text="Kind" />
+            <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch"
+                      ItemsSource="{x:Static vm:CellData.Kinds}"
+                      SelectedItem="{Binding Kind}" />
+            <CheckBox Grid.Row="1" Grid.Column="1" Content="Alive (has stats)"
+                      IsChecked="{Binding IsAlive}" />
+            <CheckBox Grid.Row="2" Grid.Column="1" Content="Locked" IsChecked="{Binding IsLocked}" />
+            <CheckBox Grid.Row="3" Grid.Column="1" Content="Can enter (has an inside)" IsChecked="{Binding CanEnter}" />
+          </Grid>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="Description" />
+            <TextBox Text="{Binding Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+          </StackPanel>
+
+          <StackPanel  DataContext="{Binding Stats}" x:DataType="vm:CharacterStats" Spacing="10">
+
+            <Grid ColumnDefinitions="90,*" ColumnSpacing="8" RowSpacing="6" RowDefinitions="Auto,Auto">
+              <TextBlock Classes="label" Text="Level" />
+              <NumericUpDown Grid.Column="1" Minimum="1" Value="{Binding Level}" />
+              <TextBlock Grid.Row="1" Classes="label" Text="Skill points" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding SkillPoints}" />
+            </Grid>
+
+            <!-- pools: current / base / total -->
+            <Grid ColumnDefinitions="90,*,*,56" ColumnSpacing="6" RowSpacing="6"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+              <Grid.Styles>
+                <Style Selector="NumericUpDown">
+                  <Setter Property="ShowButtonSpinner" Value="False" />
+                </Style>
+              </Grid.Styles>
+
+              <TextBlock Grid.Column="1" Classes="label" Text="Current" HorizontalAlignment="Center" />
+              <TextBlock Grid.Column="2" Classes="label" Text="Base" HorizontalAlignment="Center" />
+              <TextBlock Grid.Column="3" Classes="label" Text="Total" HorizontalAlignment="Center" />
+
+              <TextBlock Grid.Row="1" Classes="label" Text="HP" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Hp.Current}" />
+              <NumericUpDown Grid.Row="1" Grid.Column="2" Value="{Binding Hp.BaseValue}" />
+              <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding Hp.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="2" Classes="label" Text="MP" />
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Mp.Current}" />
+              <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding Mp.BaseValue}" />
+              <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding Mp.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="3" Classes="label" Text="SP (Yellow)" />
+              <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SpYellow.Current}" />
+              <NumericUpDown Grid.Row="3" Grid.Column="2" Value="{Binding SpYellow.BaseValue}" />
+              <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding SpYellow.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="4" Classes="label" Text="SP (Red)" />
+              <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding SpRed.Current}" />
+              <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding SpRed.BaseValue}" />
+              <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding SpRed.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- plain stats: base / total -->
+            <Grid ColumnDefinitions="90,*,56" ColumnSpacing="6" RowSpacing="6"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+              <Grid.Styles>
+                <Style Selector="NumericUpDown">
+                  <Setter Property="ShowButtonSpinner" Value="False" />
+                </Style>
+              </Grid.Styles>
+
+              <TextBlock Grid.Column="1" Classes="label" Text="Base" HorizontalAlignment="Center" />
+              <TextBlock Grid.Column="2" Classes="label" Text="Total" HorizontalAlignment="Center" />
+
+              <TextBlock Grid.Row="1" Classes="label" Text="Offence" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Offence.BaseValue}" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Offence.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="2" Classes="label" Text="Defence" />
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Defence.BaseValue}" />
+              <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Defence.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="3" Classes="label" Text="Magic power" />
+              <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding MagicPower.BaseValue}" />
+              <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding MagicPower.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="4" Classes="label" Text="Resistance" />
+              <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding Resistance.BaseValue}" />
+              <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding Resistance.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+              <TextBlock Grid.Row="5" Classes="label" Text="Speed" />
+              <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Speed.BaseValue}" />
+              <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Speed.Total}" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+
+            <TextBlock Text="Skills" FontWeight="SemiBold" />
+
+            <!-- the skills this cell knows -->
+            <ItemsControl ItemsSource="{Binding Skills}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SkillEntry">
+                  <Border Padding="8" Margin="0,0,0,6" CornerRadius="6" Background="#1FFFFFFF">
+                    <StackPanel Spacing="4">
+                      <Grid ColumnDefinitions="*,90,Auto" ColumnSpacing="6">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <NumericUpDown Grid.Column="1" Minimum="1" InnerLeftContent="Lv" Value="{Binding Level}" />
+                        <Button Grid.Column="2" Content="✕" Command="{Binding RemoveCommand}" />
+                      </Grid>
+                      <TextBlock Text="{Binding Summary}" FontSize="12" Opacity="0.7" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button Content="+ Add skill" Command="{Binding Catalog.ToggleCommand}" />
+
+            <!-- search the skill database -->
+            <Border IsVisible="{Binding Catalog.IsOpen}" Padding="8" CornerRadius="6" Background="#1FFFFFFF">
+              <StackPanel Spacing="6">
+                <TextBox Text="{Binding Catalog.Query}" PlaceholderText="Search skills..." />
+
+                <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding Catalog.Results}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="rules:SkillDef">
+                        <Border Padding="6,4" Background="Transparent" Tapped="OnSkillPicked">
+                          <StackPanel>
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Text="{Binding Info}" FontSize="11" Opacity="0.6" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+
+                <Expander Header="New skill">
+                  <StackPanel Margin="0,6,0,0" Spacing="6">
+                    <TextBox Text="{Binding Catalog.NewName}" PlaceholderText="Name" />
+                    <Grid ColumnDefinitions="*,100" ColumnSpacing="6">
+                      <ComboBox HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Static vm:SkillCatalog.Categories}"
+                                SelectedItem="{Binding Catalog.NewCategory}" />
+                      <NumericUpDown Grid.Column="1" Minimum="1" Maximum="3"
+                                     InnerLeftContent="Tier" Value="{Binding Catalog.NewTier}" />
+                    </Grid>
+                    <TextBox Text="{Binding Catalog.NewDescription}" PlaceholderText="Description"
+                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
+                    <Button Content="Create" Command="{Binding Catalog.CreateCommand}" />
+                  </StackPanel>
+                </Expander>
+
+                <TextBlock Text="{Binding Catalog.Message}" FontSize="11" Opacity="0.7" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </Expander>
+
+      <!-- ============ CUSTOM ============ -->
+      <Expander Header="Custom properties" IsExpanded="False">
+        <StackPanel Margin="0,8,0,0" Spacing="6">
+          <ItemsControl ItemsSource="{Binding Custom}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CustomProperty">
+                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="6" Margin="0,0,0,4">
+                  <TextBox Text="{Binding Key}" />
+                  <TextBox Grid.Column="1" Text="{Binding Value}" />
+                  <Button Grid.Column="2" Content="✕" Command="{Binding RemoveCommand}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Content="+ Add property" Command="{Binding AddCustomCommand}" />
+        </StackPanel>
+      </Expander>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

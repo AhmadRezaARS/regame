@@ -1,0 +1,224 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ReGame.ViewModels"
+             xmlns:views="using:ReGame.Views"
+             xmlns:cc="using:ReGame.CControls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ReGame.Views.MainView"
+             x:DataType="vm:MainViewModel">
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Height="48" Background="#202225">
+      <TextBlock Text="Top panel (profile, exp, levels...)" VerticalAlignment="Center" Margin="12,0" Opacity="0.6" />
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Height="56" Background="#202225">
+      <TextBlock Text="Bottom panel" VerticalAlignment="Center" Margin="12,0" Opacity="0.6" />
+    </Border>
+
+    <!-- left: square buttons that show/hide the right panels -->
+    <Border DockPanel.Dock="Left" Width="64" Background="#1A1B1E">
+      <StackPanel Margin="8" Spacing="8">
+        <ToggleButton Width="48" Height="48" Content="Props"
+                      HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                      IsChecked="{Binding ShowProperties}" />
+        <ToggleButton Width="48" Height="48" Content="Stats"
+                      HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                      IsChecked="{Binding ShowStats}" />
+      </StackPanel>
+    </Border>
+
+    <!-- right: property panel -->
+    <Border DockPanel.Dock="Right" Width="340" Background="#232428"
+            IsVisible="{Binding ShowProperties}">
+      <Grid>
+        <TextBlock Text="Select a cell to edit it" Opacity="0.6"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}" />
+
+        <Border IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <views:PropertyPanel DataContext="{Binding Selected}" />
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- right: stats panel -->
+    <Border DockPanel.Dock="Right" Width="250" Background="#2A2B30"
+            IsVisible="{Binding ShowStats}">
+      <Grid>
+        <TextBlock Text="Select a cell to see its stats" Opacity="0.6"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}" />
+
+        <Border IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <views:StatsPanel DataContext="{Binding Selected}" />
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- center: breadcrumb, board, worlds -->
+    <DockPanel Margin="4">
+
+      <!-- breadcrumb: world  › …  › last levels -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+        <StackPanel Orientation="Horizontal" ClipToBounds="True">
+          <StackPanel.Styles>
+            <Style Selector="Button.here">
+              <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+          </StackPanel.Styles>
+
+          <!-- the world -->
+          <Button Background="Transparent" Padding="8,4"
+                  Content="{Binding FirstCrumb.Label}"
+                  Command="{Binding FirstCrumb.GoCommand}"
+                  IsVisible="{Binding FirstCrumb, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+          <!-- hidden levels -->
+          <Button Content="› …" Background="Transparent" Padding="8,4"
+                  Click="OnBreadcrumbOverflowClick"
+                  IsVisible="{Binding HasOverflow}"
+                  ToolTip.Tip="Show the hidden levels" />
+
+          <!-- the last levels -->
+          <ItemsControl ItemsSource="{Binding Breadcrumb}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:Crumb">
+                <Button Background="Transparent" Padding="8,4"
+                        Command="{Binding GoCommand}"
+                        Classes.here="{Binding IsCurrent}"
+                        ToolTip.Tip="{Binding Name}">
+                  <TextBlock Text="{Binding Label}" MaxWidth="160" TextTrimming="CharacterEllipsis" />
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+          <Button Content="Up" Command="{Binding UpCommand}" />
+          <Button Content="Define next world (dev)" Command="{Binding DefineNextWorldCommand}" />
+        </StackPanel>
+      </Grid>
+
+      <!-- worlds:  <  00 01 02 ...  > -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
+        <Grid.Styles>
+          <Style Selector="Button.current">
+            <Setter Property="Background" Value="#B8860B" />
+          </Style>
+          <Style Selector="Button.locked">
+            <Setter Property="Opacity" Value="0.5" />
+          </Style>
+        </Grid.Styles>
+
+        <Button Content="&lt;" Command="{Binding WorldsBackCommand}" Padding="14,6" />
+
+        <ItemsControl Grid.Column="1" ItemsSource="{Binding Worlds}" Margin="6,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Rows="1" Columns="20" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:WorldItem">
+              <Button Margin="1" Padding="0,6" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center"
+                      Content="{Binding Label}"
+                      Command="{Binding EnterCommand}"
+                      Classes.current="{Binding IsCurrent}"
+                      Classes.locked="{Binding IsLocked}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Grid.Column="2" Content="&gt;" Command="{Binding WorldsForwardCommand}" Padding="14,6" />
+      </Grid>
+
+      <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Opacity="0.7" Margin="2,4,0,0" />
+
+      <!-- the map -->
+      <ListBox x:Name="Board"
+               ItemsSource="{Binding Cells}"
+               SelectedItem="{Binding Selected}"
+               DoubleTapped="OnBoardDoubleTapped"
+               PointerMoved="OnBoardPointerMoved"
+               PointerReleased="OnBoardPointerReleased"
+               PointerCaptureLost="OnBoardCaptureLost"
+               Background="Transparent" Padding="0"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               ScrollViewer.VerticalScrollBarVisibility="Disabled">
+
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <cc:FitPanel Spacing="2" />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+              <ControlTemplate>
+                <ContentPresenter Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Padding="{TemplateBinding Padding}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+              </ControlTemplate>
+            </Setter>
+          </Style>
+        </ListBox.Styles>
+
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:CellData">
+            <Grid>
+              <Border Background="{Binding BackgroundBrush}"
+                      BorderBrush="{Binding BorderBrush}"
+                      BorderThickness="{Binding BorderThickness}"
+                      CornerRadius="{Binding Corners}"
+                      ClipToBounds="True">
+                <TextBlock Text="{Binding Text}"
+                           Foreground="{Binding TextBrush}"
+                           TextWrapping="Wrap"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+              </Border>
+
+              <!-- there is something inside -->
+              <TextBlock Text="▸" Foreground="{Binding TextBrush}" Opacity="0.8"
+                         Margin="0,0,6,2" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                         IsHitTestVisible="False" IsVisible="{Binding CanEnter}" />
+
+              <!-- locked -->
+              <Border Background="#99000000" CornerRadius="{Binding Corners}"
+                      IsHitTestVisible="False" IsVisible="{Binding IsLocked}">
+                <TextBlock Text="🔒" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+
+              <!-- selection outline -->
+              <Border IsHitTestVisible="False"
+                      BorderBrush="Gold" BorderThickness="3"
+                      CornerRadius="{Binding Corners}"
+                      IsVisible="{Binding $parent[ListBoxItem].IsSelected}" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+
+  </DockPanel>
+</UserControl>
